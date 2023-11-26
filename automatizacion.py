@@ -8,10 +8,187 @@ import base64
 import io
 from datetime import datetime
 from datetime import date
+import plotly.express as px
+import sqlite3
+import pandas as pd
+import pandas as pd
+import sqlite3
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+def cargar_datos_como_dataframe():
+    conn = sqlite3.connect('datos_concursos.db')
+    c = conn.cursor()
+
+    c.execute('SELECT * FROM concursos')
+    datos = c.fetchall()
+
+    # Convertir los datos en un DataFrame
+    column_names = ["id", "Concurso", "Unidad_Requirente", "Nombre_Responsable", "fecha_solicitud_ddo",
+                    "fecha_solicitud_rs", "fecha_solicitud_extracto_legal", "fecha_publicacion_adquisiciones",
+                    "fecha_publicacion_extracto_legal", "fecha_termino_publicacion", "fecha_envio_cv",
+                    "fecha_devolucion_unidad", "fecha_evaluacion_psicolaboral", "fecha_envio_informes",
+                    "fecha_decision_seleccionado", "fecha_ingreso"]
+
+    df = pd.DataFrame(datos, columns=column_names)
+
+    # Convertir columnas de fecha a tipo datetime si aún no lo están
+    columnas_fecha = ['fecha_solicitud_ddo', 'fecha_solicitud_rs', 'fecha_solicitud_extracto_legal',
+                      'fecha_publicacion_adquisiciones', 'fecha_publicacion_extracto_legal',
+                      'fecha_termino_publicacion', 'fecha_envio_cv', 'fecha_devolucion_unidad',
+                      'fecha_evaluacion_psicolaboral', 'fecha_envio_informes', 'fecha_decision_seleccionado',
+                      'fecha_ingreso']
+    
+    for col in columnas_fecha:
+        df[col] = pd.to_datetime(df[col], errors='coerce')
+
+    conn.close()
+    return df
+
+def generar_alertas(df):
+    # Calcular los tiempos entre etapas del procedimiento
+    df['Tiempo_Apertura_a_Solicitud_Extracto'] = df['fecha_solicitud_extracto_legal'] - df['fecha_solicitud_ddo']
+    df['Tiempo_Solicitud_a_Publicacion_Extracto'] = df['fecha_publicacion_extracto_legal'] - df['fecha_solicitud_extracto_legal']
+    df['Tiempo_Cierre_Concurso_a_Envio_CV'] = df['fecha_envio_cv'] - df['fecha_termino_publicacion']
+    df['Tiempo_Entrevista_Envio_Informe'] = df['fecha_envio_informes'] - df['fecha_evaluacion_psicolaboral']
+    df['Tiempo_Envio_Informe_Respuesta_Adjudicacion'] = df['fecha_decision_seleccionado'] - df['fecha_envio_informes']
+
+    # Gráficos de los tiempos usando Seaborn
+    plt.figure(figsize=(14, 8))
+
+    # Gráfico 1: Tiempo desde Apertura del concurso hasta Solicitud de publicación en Extracto Legal
+    plt.subplot(2, 3, 1)
+    sns.histplot(df['Tiempo_Apertura_a_Solicitud_Extracto'].dt.days, bins=20, color='skyblue')
+    plt.title('Tiempo Apertura a Solicitud Extracto Legal')
+    plt.xlabel('Días')
+    plt.ylabel('Frecuencia')
+
+    # Gráfico 2: Tiempo desde Solicitud de Extracto Legal hasta Publicación en Extracto Legal
+    plt.subplot(2, 3, 2)
+    sns.histplot(df['Tiempo_Solicitud_a_Publicacion_Extracto'].dt.days, bins=20, color='salmon')
+    plt.title('Tiempo Solicitud a Publicación Extracto Legal')
+    plt.xlabel('Días')
+    plt.ylabel('Frecuencia')
+
+    # ... (Agregar gráficos para los otros tiempos)
+
+    plt.tight_layout()
+
+    # Indicadores anuales
+    df['Año'] = df['fecha_solicitud_ddo'].dt.year
+    indicadores_anuales = df.groupby('Año').size()  # Cantidad de concursos por año
+
+    # Gráficos de totalidad de procesos desarrollados anualmente
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x=indicadores_anuales.index, y=indicadores_anuales.values, palette='viridis')
+    plt.title('Cantidad de concursos por año')
+    plt.xlabel('Año')
+    plt.ylabel('Cantidad de concursos')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    # Gráficos de cantidad de concursos por solicitantes
+    plt.figure(figsize=(10, 6))
+    sns.countplot(data=df, x='Unidad_Requirente', palette='muted', order=df['Unidad_Requirente'].value_counts().index)
+    plt.title('Cantidad de concursos por solicitantes')
+    plt.xlabel('Solicitantes')
+    plt.ylabel('Cantidad de concursos')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    plt.show()
+
+    return indicadores_anuales
+
+# Suponiendo que tienes un DataFrame llamado 'datos_concursos'
+datos_concursos = cargar_datos_como_dataframe()
+
+# Generar alertas e indicadores
+resultados_alertas = generar_alertas(datos_concursos)
+
+
+
+
+
+
+
 
 
 if "edicion_exitosa" not in st.session_state:
     st.session_state.edicion_exitosa = False  # Inicializar la bandera de edición exitosa
+    
+
+
+
+#Funcion para calcular el tiempo entre dos etapas cualquiera
+def calcular_tiempo_entre_etapas(df, etapa_inicio, etapa_fin):
+    try:
+        # Acceder a las fechas correspondientes
+        fecha_inicio = df[etapa_inicio]
+        fecha_fin = df[etapa_fin]
+
+        # Calcular la diferencia de tiempo
+        diferencia_tiempo = fecha_fin - fecha_inicio
+
+     # En lugar de plt.show(), usamos st.pyplot()
+        fig, ax = plt.subplots(figsize=(8, 6))
+        ax.plot(diferencia_tiempo, marker='o')
+        ax.set_xlabel('Índice de Procesos')
+        ax.set_ylabel('Días Transcurridos')
+        ax.set_title(f'Tiempo entre {etapa_inicio} y {etapa_fin}')
+        ax.grid(True)
+
+        # Mostramos el gráfico usando st.pyplot()
+        st.pyplot(fig)
+        
+    except KeyError as e:
+        print(f"Error: No se encontraron columnas con los nombres '{etapa_inicio}' y '{etapa_fin}' en el DataFrame.")
+        return None
+    except Exception as e:
+        print(f"Error al calcular y visualizar el tiempo entre etapas: {str(e)}")
+        return None
+
+
+def calcular_tiempo_entre_etapas(df, etapa_inicio, etapa_fin):
+    try:
+        # Acceder a las fechas correspondientes
+        fecha_inicio = df[etapa_inicio]
+        fecha_fin = df[etapa_fin]
+
+        # Calcular la diferencia de tiempo
+        diferencia_tiempo = fecha_fin - fecha_inicio
+
+        # Visualizar en un gráfico
+        plt.figure(figsize=(8, 6))
+        plt.plot(diferencia_tiempo, marker='o')
+        plt.xlabel('Índice de Procesos')
+        plt.ylabel('Días Transcurridos')
+        plt.title(f'Tiempo entre {etapa_inicio} y {etapa_fin}')
+        plt.grid(True)
+        plt.show()
+        
+    except KeyError as e:
+        print(f"Error: No se encontraron columnas con los nombres '{etapa_inicio}' y '{etapa_fin}' en el DataFrame.")
+        return None
+    except Exception as e:
+        print(f"Error al calcular y visualizar el tiempo entre etapas: {str(e)}")
+        return None
+
+# Nueva función para clasificar por mes
+def clasificar_por_mes(datos_cargados):
+    # Convertir a DataFrame
+    df = pd.DataFrame(datos_cargados)
+
+    # Convertir la columna 'fecha_solicitud_ddo' a tipo datetime si aún no está en ese formato
+    df['fecha_solicitud_ddo'] = pd.to_datetime(df['fecha_solicitud_ddo'])
+
+    # Crear nueva columna 'mes' basada en la fecha de solicitud al DDO
+    df['mes'] = df['fecha_solicitud_ddo'].dt.strftime('%Y-%m')
+
+    return df
+
+
 def reindexar_ids():
     conn = sqlite3.connect('datos_concursos.db')
     c = conn.cursor()
@@ -52,8 +229,6 @@ def eliminar_fila_de_base_de_datos(id_a_eliminar):
 
 # Verificar si es una fecha y obtener el valor correspondiente
 def obtener_valor_fecha(valor):
-    if valor is None:
-        return None
     # Verificar si el valor es de tipo fecha
     if isinstance(valor, str) and valor.strip():
         try:
@@ -235,7 +410,14 @@ def obtener_alertas_cercanas(datos_cargados):
                         "Fecha límite": fecha.strftime("%Y-%m-%d")
                     })
 
-    return alertas_cercanas
+    # Construye el DataFrame dentro de la función
+    df_alertas = pd.DataFrame(alertas_cercanas)
+    
+    # Ahora puedes usar df_alertas para cualquier otra manipulación dentro de la función
+    # Por ejemplo, generar gráficos, cálculos adicionales, etc.
+
+    return df_alertas  # Retorna el DataFrame
+
 
     
 datos_ingresados = []
@@ -309,7 +491,7 @@ def calcular_diferencia_fechas(fecha_inicial, fecha_final):
     # Calcula la diferencia de tiempo
     diferencia = fecha_final - fecha_inicial
     return diferencia.days, diferencia.total_seconds() / 3600  # Diferencia en días y horas
-
+# Entre fecha_solicitud_ddo y fecha solicitu extracto legal
 def visualizar_tiempo_entre_fechas():
     datos_cargados = cargar_datos()
 
@@ -353,10 +535,22 @@ st.image("utem.jpg", width=150)
 st.title("Registro de Concursos de Reclutamiento y Selección UTEM")
 
 # Menú de navegación
-pagina_seleccionada = st.sidebar.selectbox("Selecciona una página", ["Dashboard","Ingreso de datos","Visualizar Datos","Editar datos","Visualizar Graficos","Alertas cercanas"])
+pagina_seleccionada = st.sidebar.selectbox("Selecciona una página", ["Dashboard","Ingreso de datos","Visualizar Datos","Editar datos","Clasificar por Mes","Visualizar Graficos","Alertas cercanas"])
 
 if pagina_seleccionada == "Dashboard":
     st.header("Bienvenido al dashboard")
+    
+
+    mi_dataframe = pd.DataFrame()
+    calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_envio_informes', 'fecha_decision_seleccionado')
+    mi_dataframe = cargar_datos_como_dataframe()
+    st.table(mi_dataframe)
+    # Suponiendo que tienes tu DataFrame cargado como mi_dataframe
+    calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_solicitud_ddo', 'fecha_solicitud_extracto_legal')
+    calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_solicitud_extracto_legal', 'fecha_publicacion_extracto_legal')
+    calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_termino_publicacion', 'fecha_envio_cv')
+    calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_evaluacion_psicolaboral', 'fecha_envio_informes')
+    calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_envio_informes', 'fecha_decision_seleccionado')
 
 
 
@@ -495,14 +689,30 @@ if pagina_seleccionada == "Visualizar Datos":
             st.session_state.edicion_exitosa = False  # Reiniciar la bandera después de mostrar el mensaje
     else:
         st.info("Aún no se han ingresado datos.")
+        
+        
+if pagina_seleccionada == "Clasificar por Mes":
+    datos_cargados = cargar_datos()
+    
+    if datos_cargados:
+        df_meses = clasificar_por_mes(datos_cargados)
+        st.header("Datos Clasificados por Mes")
+
+        for mes, datos_mes in df_meses.groupby('mes'):
+            st.subheader(f"Mes: {mes}")
+            st.dataframe(datos_mes)
+    else:
+        st.warning("Aún no hay datos ingresados.")
        
 
 elif pagina_seleccionada == "Visualizar Graficos":
     pag_seleccionada = st.sidebar.selectbox("Selecciona una página", ["Visualizar tiempo entre fechas", "Visualizar Graficos"])
     if pag_seleccionada == "Visualizar tiempo entre fechas":
         visualizar_tiempo_entre_fechas()
+        #calcular_tiempo_entre_etapas()
     elif pag_seleccionada == "Visualizar Graficos":
         visualizar_graficos()
+        
         
 elif pagina_seleccionada == "Editar datos":
     editar_datos()
@@ -510,20 +720,25 @@ elif pagina_seleccionada == "Editar datos":
     
     
     
-       
+
 elif pagina_seleccionada == "Alertas cercanas":
+    # Suponiendo que tienes un DataFrame df_alertas con tus datos
+
     st.header("Alertas de fechas cercanas")
 
     # Cargar datos desde la base de datos
     datos_cargados = cargar_datos()
 
-    alertas_cercanas = obtener_alertas_cercanas(datos_cargados)
+    # Llamas a la función para obtener df_alertas
+    df_alertas = obtener_alertas_cercanas(datos_cargados)
 
-    if not alertas_cercanas:
+    if df_alertas.empty:
         st.info("No hay alertas cercanas.")
     else:
-        df_alertas = pd.DataFrame(alertas_cercanas)
+        # Muestra el DataFrame en Streamlit
         st.write(df_alertas)
+
+
 
 
 
