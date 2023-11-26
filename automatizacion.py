@@ -9,11 +9,7 @@ import io
 from datetime import datetime
 from datetime import date
 import sqlite3
-import pandas as pd
-import pandas as pd
-import sqlite3
-import pandas as pd
-import seaborn as sns
+
 
 
 def cargar_datos_como_dataframe():
