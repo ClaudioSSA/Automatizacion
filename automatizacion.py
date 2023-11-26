@@ -8,14 +8,13 @@ import base64
 import io
 from datetime import datetime
 from datetime import date
-import plotly.express as px
 import sqlite3
 import pandas as pd
 import pandas as pd
 import sqlite3
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
+
 
 def cargar_datos_como_dataframe():
     conn = sqlite3.connect('datos_concursos.db')
