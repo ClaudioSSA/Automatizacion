@@ -52,6 +52,8 @@ def eliminar_fila_de_base_de_datos(id_a_eliminar):
 
 # Verificar si es una fecha y obtener el valor correspondiente
 def obtener_valor_fecha(valor):
+    if valor is None:
+        return None
     # Verificar si el valor es de tipo fecha
     if isinstance(valor, str) and valor.strip():
         try:
