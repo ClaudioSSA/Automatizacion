@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
-#import plotly.express as px
+import plotly.express as px
 import pandas as pd
 import sqlite3
 import matplotlib.pyplot as plt
