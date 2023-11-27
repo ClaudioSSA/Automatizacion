@@ -635,7 +635,8 @@ pagina_seleccionada = st.sidebar.selectbox("Selecciona una página", ["Dashboard
 
 if pagina_seleccionada == "Dashboard":
     st.header("Bienvenido al dashboard")
-    #generar_grafico_barras()
+    
+    # Cargar los datos
     datos = cargar_datos()
     df = pd.DataFrame(datos)
 
@@ -645,9 +646,9 @@ if pagina_seleccionada == "Dashboard":
     # Gráfico de barras del porcentaje de alertas por unidad requerente
     st.subheader('Porcentaje de Alertas por Unidad Requerente')
     fig = px.bar(df['Unidad_Requirente'].value_counts(normalize=True), 
-             x=df['Unidad_Requirente'].value_counts(normalize=True).index, 
-             y=df['Unidad_Requirente'].value_counts(normalize=True).values * 100,
-             labels={'x': 'Unidad_Requirente', 'y': 'Porcentaje (%)'})
+                 x=df['Unidad_Requirente'].value_counts(normalize=True).index, 
+                 y=df['Unidad_Requirente'].value_counts(normalize=True).values * 100,
+                 labels={'x': 'Unidad_Requirente', 'y': 'Porcentaje (%)'})
 
     fig.update_traces(marker_color='skyblue')  # Color de las barras
 
@@ -656,6 +657,7 @@ if pagina_seleccionada == "Dashboard":
     # Tabla con detalles de las alertas
     st.subheader('Detalles de las Alertas')
     st.write(df)
+
 
     
 
