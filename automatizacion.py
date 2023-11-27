@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
+import plotly.express as px
 import pandas as pd
 import sqlite3
 import matplotlib.pyplot as plt
@@ -10,10 +11,121 @@ from datetime import datetime
 from datetime import date
 import sqlite3
 import pandas as pd
-import pandas as pd
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
+
+# Función para calcular diferencia fecha solicitud extracto legal y fecha solicitud ddo
+
+def calcular_y_mostrar_tiempo_promedio(dataframe):
+    # Calcular los tiempos entre las fechas
+    dataframe['tiempo_entre_solicitudes'] = (dataframe['fecha_solicitud_extracto_legal'] - dataframe['fecha_solicitud_ddo']).dt.days
+
+    # Seleccionar las columnas relevantes
+    columnas_mostrar = [
+        'id', 'Concurso', 'Unidad_Requirente', 'Nombre_Responsable',
+        'fecha_solicitud_ddo', 'fecha_solicitud_extracto_legal', 'tiempo_entre_solicitudes'
+    ]
+    dataframe_reducido = dataframe[columnas_mostrar]
+
+    # Mostrar la tabla con las columnas seleccionadas y el promedio
+    st.write("### Tabla de Tiempos desde Apertura del concurso hasta la solicitud de publicación en Extracto Legal. ###")
+    st.write(dataframe_reducido)
+
+    tiempo_promedio = dataframe['tiempo_entre_solicitudes'].mean()
+    st.write(f"**Promedio de Tiempo:** {tiempo_promedio} días")
+    
+def calcular_y_mostrar_tiempo_promedio2(dataframe):
+    # Calcular los tiempos entre las fechas
+    dataframe['tiempo_entre_solicitud_publicacion'] = (dataframe['fecha_publicacion_extracto_legal'] - dataframe['fecha_solicitud_extracto_legal']).dt.days
+
+    # Seleccionar las columnas comprometidas
+    columnas_mostrar = [
+        'id', 'Concurso', 'Nombre_Responsable', 'Unidad_Requirente',
+        'fecha_publicacion_extracto_legal', 'fecha_solicitud_extracto_legal', 'tiempo_entre_solicitud_publicacion'
+    ]
+    dataframe_reducido = dataframe[columnas_mostrar]
+
+    # Mostrar la tabla con las columnas seleccionadas y el promedio
+    st.write("### Tabla de Tiempos entre Solicitud y Publicación de Extracto Legal")
+    st.write(dataframe_reducido)
+
+    tiempo_promedio = dataframe['tiempo_entre_solicitud_publicacion'].mean()
+    st.write(f"**Promedio de Tiempo:** {tiempo_promedio} días")
+    
+def calcular_y_mostrar_tiempo_promedio(dataframe):
+    # Calcular los tiempos entre las fechas
+    dataframe['tiempo_entre_termino_y_envio'] = (dataframe['fecha_termino_publicacion'] - dataframe['fecha_envio_cv']).dt.days
+
+    # Seleccionar las columnas necesarias
+    columnas_mostrar = [
+        'id', 'Concurso', 'Unidad_Requirente', 'fecha_termino_publicacion',
+        'fecha_envio_cv', 'tiempo_entre_termino_y_envio'
+    ]
+    dataframe_reducido = dataframe[columnas_mostrar]
+
+    # Mostrar la tabla con las columnas seleccionadas y el tiempo entre las fechas
+    st.write("### Tiempo entre Fecha de Término y Envío de CV")
+    st.write(dataframe_reducido)
+    
+    
+def calcular_tiempo_entre_informes_decision(dataframe):
+    # Calcular los tiempos entre las fechas
+    dataframe['tiempo_entre_informes_decision'] = (dataframe['fecha_decision_seleccionado'] - dataframe['fecha_envio_informes']).dt.days
+
+    # Seleccionar las columnas necesarias
+    columnas_mostrar = [
+        'id', 'Concurso', 'Unidad_Requirente', 'Nombre_Responsable',
+        'fecha_envio_informes', 'fecha_decision_seleccionado',
+        'tiempo_entre_informes_decision'
+    ]
+    dataframe_reducido = dataframe[columnas_mostrar]
+
+    # Mostrar la tabla con las columnas seleccionadas y el tiempo entre las fechas
+    st.write("### Tiempo entre Envío de Informes y Decisión del Seleccionado")
+    st.write(dataframe_reducido)
+
+    
+def calcular_tiempo_entre_evaluacion_informes(dataframe):
+    # Calcular los tiempos entre las fechas
+    dataframe['tiempo_entre_evaluacion_informes'] = (dataframe['fecha_envio_informes'] - dataframe['fecha_evaluacion_psicolaboral']).dt.days
+
+    # Seleccionar las columnas necesarias
+    columnas_mostrar = [
+        'id', 'Concurso', 'Unidad_Requirente', 'fecha_termino_publicacion',
+        'fecha_envio_cv', 'fecha_evaluacion_psicolaboral',
+        'fecha_envio_informes', 'tiempo_entre_evaluacion_informes'
+    ]
+    dataframe_reducido = dataframe[columnas_mostrar]
+
+    # Mostrar la tabla con las columnas seleccionadas y el tiempo entre las fechas
+    st.write("### Tiempo entre Evaluación Psicolaboral y Envío de Informes")
+    st.write(dataframe_reducido)
+
+
+def generar_grafico_barras():
+        # Datos de ejemplo (nombre de los pasos y su respectivo tiempo en días)
+            nombres_pasos = ['Apertura', 'Paso 2', 'Paso 3', 'Solicitud de Publicación']
+            tiempos = [5, 10, 8, 7]  # Tiempo en días para cada paso
+
+        # Configuración inicial de la gráfica utilizando Axes
+            fig, ax = plt.subplots()
+            ax.bar(nombres_pasos, tiempos, color='blue')
+
+        # Configuración adicional
+            ax.set_xlabel('Pasos del Procedimiento')
+            ax.set_ylabel('Tiempo (días)')
+            ax.set_title('Duración de cada Paso del Procedimiento')
+
+            return fig
+
+# Diseño básico de la aplicación Streamlit
+#st.title('Visualización de Tiempos del Procedimiento')
+
+# Llamar a la función para generar el gráfico de barras
+grafico = generar_grafico_barras()
+# Mostrar la gráfica en Streamlit
+#st.pyplot(grafico)
 
 def cargar_datos_como_dataframe():
     conn = sqlite3.connect('datos_concursos.db')
@@ -43,6 +155,63 @@ def cargar_datos_como_dataframe():
 
     conn.close()
     return df
+    
+def cargar_datos_como_dataframe():
+    conn = sqlite3.connect('datos_concursos.db')
+    c = conn.cursor()
+
+    c.execute('SELECT * FROM concursos')
+    datos = c.fetchall()
+
+    # Convertir los datos en un DataFrame
+    column_names = ["id", "Concurso", "Unidad_Requirente", "Nombre_Responsable", "fecha_solicitud_ddo",
+                    "fecha_solicitud_rs", "fecha_solicitud_extracto_legal", "fecha_publicacion_adquisiciones",
+                    "fecha_publicacion_extracto_legal", "fecha_termino_publicacion", "fecha_envio_cv",
+                    "fecha_devolucion_unidad", "fecha_evaluacion_psicolaboral", "fecha_envio_informes",
+                    "fecha_decision_seleccionado", "fecha_ingreso"]
+
+    df = pd.DataFrame(datos, columns=column_names)
+
+    # Convertir columnas de fecha a tipo datetime si aún no lo están
+    columnas_fecha = ['fecha_solicitud_ddo', 'fecha_solicitud_rs', 'fecha_solicitud_extracto_legal',
+                      'fecha_publicacion_adquisiciones', 'fecha_publicacion_extracto_legal',
+                      'fecha_termino_publicacion', 'fecha_envio_cv', 'fecha_devolucion_unidad',
+                      'fecha_evaluacion_psicolaboral', 'fecha_envio_informes', 'fecha_decision_seleccionado',
+                      'fecha_ingreso']
+    
+    for col in columnas_fecha:
+        df[col] = pd.to_datetime(df[col], errors='coerce')
+
+    conn.close()
+    return df
+
+def calcular_tiempo_promedios():
+    df = cargar_datos_como_dataframe()
+
+    # Filtrar registros con fechas válidas en ambas columnas
+    filtrado = df.dropna(subset=['fecha_solicitud_extracto_legal', 'fecha_solicitud_ddo'])
+
+    # Calcular la diferencia de tiempo entre las fechas y obtener el tiempo promedio
+    filtrado['tiempo_diferencia'] = filtrado['fecha_solicitud_extracto_legal'] - filtrado['fecha_solicitud_ddo']
+    tiempo_promedio = filtrado['tiempo_diferencia'].mean()
+
+    return tiempo_promedio
+
+
+def generar_grafico_tiempo_promedio2(tiempos):
+    nombres_pasos = ['Paso 1', 'Paso 2', 'Paso 3', 'Paso 4']  # Ejemplo de nombres de pasos
+
+    fig, ax = plt.subplots()
+    ax.plot(nombres_pasos, tiempos, marker='o', linestyle='-', color='blue')
+
+    ax.set_xlabel('Pasos del Procedimiento')
+    ax.set_ylabel('Tiempo Promedio (días)')
+    ax.set_title('Variación del Tiempo Promedio por Paso del Procedimiento')
+    ax.grid(True)
+
+    return fig
+
+
 
 if "edicion_exitosa" not in st.session_state:
     st.session_state.edicion_exitosa = False  # Inicializar la bandera de edición exitosa
@@ -325,10 +494,11 @@ def obtener_alertas_cercanas(datos_cargados):
         for fecha_columna in ['fecha_devolucion_unidad', 'fecha_envio_informes', 'fecha_decision_seleccionado']:
             fecha_str = dato.get(fecha_columna)
             if fecha_str:
-                fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date()
-                diferencia_dias = (fecha - today).days
-                if 0 <= diferencia_dias <= 3:  # Considera fechas hasta 3 días en el futuro
-                    alertas_cercanas.append({
+                fecha = datetime.strptime(fecha_str, "%Y-%m-%d").date() if fecha_str != 'None' else None
+                if fecha:
+                    diferencia_dias = (fecha - today).days
+                    if 0 <= diferencia_dias <= 3:  # Considera fechas hasta 3 días en el futuro
+                        alertas_cercanas.append({
                         "ID": dato["id"],
                         "Concurso": concurso,
                         "Unidad Requirente": unidad_requirente,
@@ -343,7 +513,6 @@ def obtener_alertas_cercanas(datos_cargados):
     # Por ejemplo, generar gráficos, cálculos adicionales, etc.
 
     return df_alertas  # Retorna el DataFrame
-
 
     
 datos_ingresados = []
@@ -379,6 +548,7 @@ def actualizar_dato_en_base_de_datos(id, datos_actualizados):
     except Exception as e:
         print(f"Error al actualizar datos en la base de datos: {str(e)}")
         return False  # Indica que hubo un error al actualizar
+       
 
 
 
@@ -456,7 +626,7 @@ def visualizar_tiempo_entre_fechas():
 
 
 
-# Título de la aplicación y logo
+#Título de la aplicación y logo
 st.image("utem.jpg", width=150)
 st.title("Registro de Concursos de Reclutamiento y Selección UTEM")
 
@@ -465,18 +635,36 @@ pagina_seleccionada = st.sidebar.selectbox("Selecciona una página", ["Dashboard
 
 if pagina_seleccionada == "Dashboard":
     st.header("Bienvenido al dashboard")
+    #generar_grafico_barras()
+    datos = cargar_datos()
+    df = pd.DataFrame(datos)
+
+    # Título del dashboard
+    st.title('Dashboard de Alertas')
+
+    # Gráfico de barras del porcentaje de alertas por unidad requerente
+    st.subheader('Porcentaje de Alertas por Unidad Requerente')
+    fig = px.bar(df['Unidad_Requirente'].value_counts(normalize=True), 
+             x=df['Unidad_Requirente'].value_counts(normalize=True).index, 
+             y=df['Unidad_Requirente'].value_counts(normalize=True).values * 100,
+             labels={'x': 'Unidad_Requirente', 'y': 'Porcentaje (%)'})
+
+    fig.update_traces(marker_color='skyblue')  # Color de las barras
+
+    st.plotly_chart(fig)
+
+    # Tabla con detalles de las alertas
+    st.subheader('Detalles de las Alertas')
+    st.write(df)
+
     
 
-    mi_dataframe = pd.DataFrame()
-    calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_envio_informes', 'fecha_decision_seleccionado')
-    mi_dataframe = cargar_datos_como_dataframe()
-    st.table(mi_dataframe)
-    # Suponiendo que tienes tu DataFrame cargado como mi_dataframe
-    calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_solicitud_ddo', 'fecha_solicitud_extracto_legal')
-    calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_solicitud_extracto_legal', 'fecha_publicacion_extracto_legal')
-    calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_termino_publicacion', 'fecha_envio_cv')
-    calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_evaluacion_psicolaboral', 'fecha_envio_informes')
-    calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_envio_informes', 'fecha_decision_seleccionado')
+    #mi_dataframe = pd.DataFrame()
+    #calcular_tiempo_entre_etapas(mi_dataframe, 'fecha_envio_informes', 'fecha_decision_seleccionado')
+    #mi_dataframe = cargar_datos_como_dataframe()
+    #st.table(mi_dataframe)
+ 
+   
 
 
 
@@ -632,14 +820,37 @@ if pagina_seleccionada == "Clasificar por Mes":
        
 
 elif pagina_seleccionada == "Visualizar Graficos":
-    pag_seleccionada = st.sidebar.selectbox("Selecciona una página", ["Visualizar tiempo entre fechas", "Visualizar Graficos"])
-    if pag_seleccionada == "Visualizar tiempo entre fechas":
-        visualizar_tiempo_entre_fechas()
-        #calcular_tiempo_entre_etapas()
-    elif pag_seleccionada == "Visualizar Graficos":
+    pag_seleccionada = st.sidebar.selectbox("Selecciona una página", [ "Porcentaje solicitudes por unidad requirente", "Tiempo promedio apertura-solicitud extracto","Desde la solicitud de Extracto Legal – Publicación en Extracto Legal","Cierre de Concurso – Envió de CV para entrevista psicolaboral","Tiempo desde la Entrevista psicolaboral al envió del Informe","Desde el envío del informe – respuesta de persona que se adjudica el cargo"
+])
+    if pag_seleccionada == "Tiempo promedio apertura-solicitud extracto":
+        # Cargar los datos
+        datos = cargar_datos_como_dataframe()
+
+        # Calcular y mostrar los tiempos y el promedio
+        calcular_y_mostrar_tiempo_promedio(datos)
+        
+        # calcular_tiempo_entre_etapas()
+    elif pag_seleccionada == "Porcentaje solicitudes por unidad requirente":
         visualizar_graficos()
-        
-        
+    elif pag_seleccionada == "Desde la solicitud de Extracto Legal – Publicación en Extracto Legal":
+        # Cargar los datos
+        datos = cargar_datos_como_dataframe()
+
+        # Calcular y mostrar los tiempos y el promedio (versión 2)
+        calcular_y_mostrar_tiempo_promedio2(datos)
+    elif pag_seleccionada == "Cierre de Concurso – Envió de CV para entrevista psicolaboral":
+         # Cargar los datos
+        datos = cargar_datos_como_dataframe()
+
+        # Calcular y mostrar los tiempos y el promedio (versión 2)
+        calcular_y_mostrar_tiempo_promedio(datos)
+    elif pag_seleccionada == "Tiempo desde la Entrevista psicolaboral al envió del Informe":
+        datos = cargar_datos_como_dataframe()
+        # Llamada a la función
+        calcular_tiempo_entre_evaluacion_informes(datos)
+    elif pag_seleccionada == "Desde el envío del informe – respuesta de persona que se adjudica el cargo":
+        datos = cargar_datos_como_dataframe()
+        calcular_tiempo_entre_informes_decision(datos)
 elif pagina_seleccionada == "Editar datos":
     editar_datos()
     
@@ -662,6 +873,7 @@ elif pagina_seleccionada == "Alertas cercanas":
         st.info("No hay alertas cercanas.")
     else:
         # Muestra el DataFrame en Streamlit
+        st.warning("!!!!!!!!!!!!!!!!!!!ATENCIÓN, ATENDER LO ANTES POSIBLE!!!!!!!!!!!!!!!!! , SE ACERCAN LAS SIGUIENTES FECHAS Y ETAPAS")
         st.write(df_alertas)
 
 
