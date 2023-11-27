@@ -9,8 +9,11 @@ import io
 from datetime import datetime
 from datetime import date
 import sqlite3
-
-
+import pandas as pd
+import pandas as pd
+import sqlite3
+import pandas as pd
+import matplotlib.pyplot as plt
 
 def cargar_datos_como_dataframe():
     conn = sqlite3.connect('datos_concursos.db')
@@ -41,81 +44,9 @@ def cargar_datos_como_dataframe():
     conn.close()
     return df
 
-def generar_alertas(df):
-    # Calcular los tiempos entre etapas del procedimiento
-    df['Tiempo_Apertura_a_Solicitud_Extracto'] = df['fecha_solicitud_extracto_legal'] - df['fecha_solicitud_ddo']
-    df['Tiempo_Solicitud_a_Publicacion_Extracto'] = df['fecha_publicacion_extracto_legal'] - df['fecha_solicitud_extracto_legal']
-    df['Tiempo_Cierre_Concurso_a_Envio_CV'] = df['fecha_envio_cv'] - df['fecha_termino_publicacion']
-    df['Tiempo_Entrevista_Envio_Informe'] = df['fecha_envio_informes'] - df['fecha_evaluacion_psicolaboral']
-    df['Tiempo_Envio_Informe_Respuesta_Adjudicacion'] = df['fecha_decision_seleccionado'] - df['fecha_envio_informes']
-
-    # Gráficos de los tiempos usando Seaborn
-    plt.figure(figsize=(14, 8))
-
-    # Gráfico 1: Tiempo desde Apertura del concurso hasta Solicitud de publicación en Extracto Legal
-    plt.subplot(2, 3, 1)
-    sns.histplot(df['Tiempo_Apertura_a_Solicitud_Extracto'].dt.days, bins=20, color='skyblue')
-    plt.title('Tiempo Apertura a Solicitud Extracto Legal')
-    plt.xlabel('Días')
-    plt.ylabel('Frecuencia')
-
-    # Gráfico 2: Tiempo desde Solicitud de Extracto Legal hasta Publicación en Extracto Legal
-    plt.subplot(2, 3, 2)
-    sns.histplot(df['Tiempo_Solicitud_a_Publicacion_Extracto'].dt.days, bins=20, color='salmon')
-    plt.title('Tiempo Solicitud a Publicación Extracto Legal')
-    plt.xlabel('Días')
-    plt.ylabel('Frecuencia')
-
-    # ... (Agregar gráficos para los otros tiempos)
-
-    plt.tight_layout()
-
-    # Indicadores anuales
-    df['Año'] = df['fecha_solicitud_ddo'].dt.year
-    indicadores_anuales = df.groupby('Año').size()  # Cantidad de concursos por año
-
-    # Gráficos de totalidad de procesos desarrollados anualmente
-    plt.figure(figsize=(10, 6))
-    sns.barplot(x=indicadores_anuales.index, y=indicadores_anuales.values, palette='viridis')
-    plt.title('Cantidad de concursos por año')
-    plt.xlabel('Año')
-    plt.ylabel('Cantidad de concursos')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-
-    # Gráficos de cantidad de concursos por solicitantes
-    plt.figure(figsize=(10, 6))
-    sns.countplot(data=df, x='Unidad_Requirente', palette='muted', order=df['Unidad_Requirente'].value_counts().index)
-    plt.title('Cantidad de concursos por solicitantes')
-    plt.xlabel('Solicitantes')
-    plt.ylabel('Cantidad de concursos')
-    plt.xticks(rotation=45)
-    plt.tight_layout()
-
-    plt.show()
-
-    return indicadores_anuales
-
-# Suponiendo que tienes un DataFrame llamado 'datos_concursos'
-datos_concursos = cargar_datos_como_dataframe()
-
-# Generar alertas e indicadores
-resultados_alertas = generar_alertas(datos_concursos)
-
-
-
-
-
-
-
-
-
 if "edicion_exitosa" not in st.session_state:
     st.session_state.edicion_exitosa = False  # Inicializar la bandera de edición exitosa
     
-
-
-
 #Funcion para calcular el tiempo entre dos etapas cualquiera
 def calcular_tiempo_entre_etapas(df, etapa_inicio, etapa_fin):
     try:
