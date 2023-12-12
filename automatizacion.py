@@ -641,10 +641,10 @@ if pagina_seleccionada == "Dashboard":
     df = pd.DataFrame(datos)
 
     # Título del dashboard
-    st.title('Dashboard de Alertas')
+    st.title('Dashboard')
 
     # Gráfico de barras del porcentaje de alertas por unidad requerente
-    st.subheader('Porcentaje de Alertas por Unidad Requerente')
+    st.subheader('Porcentaje de Solicitudes por Unidad Requerente')
     fig = px.bar(df['Unidad_Requirente'].value_counts(normalize=True), 
                  x=df['Unidad_Requirente'].value_counts(normalize=True).index, 
                  y=df['Unidad_Requirente'].value_counts(normalize=True).values * 100,
